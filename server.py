@@ -60,15 +60,18 @@ def get_employee(employee_id: int) -> Employee:
     raise ToolError(f"No employee with id {employee_id}.")
 
 
-# Authentication: the company identity provider in production, local test keys otherwise.
-dev_keys: RSAKeyPair | None = None
-if jwks_uri := os.getenv("JWKS_URI"):
-    auth = JWTVerifier(jwks_uri=jwks_uri, issuer=ISSUER, audience=AUDIENCE)
-else:
-    dev_keys = RSAKeyPair.generate()
-    auth = JWTVerifier(public_key=dev_keys.public_key, issuer=ISSUER, audience=AUDIENCE)
+JWKS_URI = os.getenv("JWKS_URI")
+dev_keys: RSAKeyPair | None = None if JWKS_URI else RSAKeyPair.generate()
 
-mcp = FastMCP("Northfield Coffee HR", auth=auth)
+
+def build_auth() -> JWTVerifier:
+    """Trust the company identity provider, or local test keys when JWKS_URI is unset."""
+    if dev_keys is None:
+        return JWTVerifier(jwks_uri=JWKS_URI, issuer=ISSUER, audience=AUDIENCE)
+    return JWTVerifier(public_key=dev_keys.public_key, issuer=ISSUER, audience=AUDIENCE)
+
+
+mcp = FastMCP("Northfield Coffee HR", auth=build_auth())
 
 
 def create_dev_token(scopes: list[str]) -> str:
