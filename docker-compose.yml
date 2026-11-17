@@ -1,0 +1,10 @@
+services:
+  hr-mcp:
+    build: .
+    ports:
+      - "8000:8000"
+    # Without these variables the server runs in local mode and prints test tokens to the logs.
+    # environment:
+    #   JWKS_URI: https://idp.example.com/.well-known/jwks.json
+    #   JWT_ISSUER: https://idp.example.com
+    restart: unless-stopped
